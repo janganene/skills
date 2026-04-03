@@ -2,32 +2,33 @@
 name: discord-webhook
 description: >
   Create, manage, and post messages to Discord webhooks.
-  Use this skill when posting messages to a Discord channel via webhook URL (no bot token needed),
-  creating or deleting webhooks, listing webhooks in a channel, sending embeds or files via webhook,
-  or editing/deleting webhook messages after sending.
+  Use this skill when posting to a Discord channel via webhook URL (no bot token needed),
+  creating or deleting webhooks, listing webhooks in a channel, sending embeds or files
+  via webhook, or editing/deleting webhook messages after sending.
   Triggers: "post to Discord webhook", "send webhook message", "create Discord webhook",
-  "webhook embed", "Discord webhook URL", "incoming webhook".
+  "webhook embed", "Discord webhook URL", "incoming webhook", "webhook notify".
+compatibility:
+  tools: curl
 ---
 
 # Discord Webhooks
 
-Official docs: https://discord.com/developers/docs/resources/webhook  
+Docs: https://discord.com/developers/docs/resources/webhook
 Base URL: `https://discord.com/api/v10`
 
-Webhooks allow sending messages to a Discord channel without a bot user or full bot authentication.
-Two use cases exist: managed webhooks (created via bot token) and standalone webhook URLs.
+Webhooks allow sending messages to a Discord channel without a full bot session.
 
 ---
 
 ## Webhook via Bot Token (managed)
 
-Required for creating, listing, and deleting webhooks.
+Required for creating, listing, editing, and deleting webhooks.
 
 ```bash
 export DISCORD_BOT_TOKEN="your-bot-token-here"
 ```
 
-### Create a webhook in a channel
+### Create webhook in a channel
 
 ```bash
 echo '{"name":"My Webhook","avatar":null}' > /tmp/req.json
@@ -43,24 +44,14 @@ Save the returned `id` and `token`. The URL is `https://discord.com/api/webhooks
 
 ```bash
 bash -c 'curl -s "https://discord.com/api/v10/channels/CHANNEL_ID/webhooks" \
-  -H "Authorization: Bot $DISCORD_BOT_TOKEN"' \
-  | jq '.[] | {id, name, token}'
+  -H "Authorization: Bot $DISCORD_BOT_TOKEN"' | jq '.[] | {id, name, token}'
 ```
 
 ### List all webhooks in a guild
 
 ```bash
 bash -c 'curl -s "https://discord.com/api/v10/guilds/GUILD_ID/webhooks" \
-  -H "Authorization: Bot $DISCORD_BOT_TOKEN"' \
-  | jq '.[] | {id, name, channel_id}'
-```
-
-### Get a specific webhook
-
-```bash
-bash -c 'curl -s "https://discord.com/api/v10/webhooks/WEBHOOK_ID" \
-  -H "Authorization: Bot $DISCORD_BOT_TOKEN"' \
-  | jq '{id, name, channel_id, token}'
+  -H "Authorization: Bot $DISCORD_BOT_TOKEN"' | jq '.[] | {id, name, channel_id}'
 ```
 
 ### Edit a webhook
@@ -84,9 +75,7 @@ bash -c 'curl -s -X DELETE "https://discord.com/api/v10/webhooks/WEBHOOK_ID" \
 
 ## Post via Webhook URL (no bot token required)
 
-Use the webhook URL directly. No `Authorization` header needed.
-
-### Send a plain message
+### Send plain message
 
 ```bash
 echo '{"content":"Message via webhook","username":"Custom Name"}' > /tmp/req.json
@@ -95,12 +84,11 @@ curl -s -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
   -d @/tmp/req.json
 ```
 
-Optional parameters:
-- `username`: overrides the webhook's default display name
-- `avatar_url`: overrides the webhook's default avatar (must be a direct image URL)
-- `tts`: set `true` for text-to-speech
+Optional parameters: `username` (override display name) · `avatar_url` · `tts`
 
-### Send an embed via webhook
+### Send embed
+
+Up to 10 embeds per message.
 
 ```bash
 cat > /tmp/req.json << 'EOF'
@@ -109,11 +97,11 @@ cat > /tmp/req.json << 'EOF'
   "avatar_url": "https://example.com/avatar.png",
   "embeds": [{
     "title": "Deployment Complete",
-    "description": "Build **v1.2.3** was deployed successfully.",
+    "description": "Build **v1.2.3** deployed successfully.",
     "color": 3066993,
     "fields": [
       {"name": "Environment", "value": "Production", "inline": true},
-      {"name": "Duration",    "value": "1m 32s",      "inline": true}
+      {"name": "Duration",    "value": "1m 32s",     "inline": true}
     ],
     "footer": {"text": "CI/CD Bot"},
     "timestamp": "2024-01-01T12:00:00.000Z"
@@ -125,9 +113,7 @@ curl -s -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
   -d @/tmp/req.json
 ```
 
-Up to 10 embeds can be included in a single webhook message.
-
-### Send a file via webhook
+### Send file
 
 ```bash
 curl -s -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
@@ -135,9 +121,7 @@ curl -s -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
   -F "files[0]=@/path/to/report.pdf"
 ```
 
-### Send with wait=true (receive message object back)
-
-Append `?wait=true` to get the sent message ID, which is needed for later edits.
+### Send with wait=true (get message ID back for later edits)
 
 ```bash
 echo '{"content":"Tracked message"}' > /tmp/req.json
@@ -149,23 +133,19 @@ curl -s -X POST \
 
 ---
 
-## Edit and Delete Sent Webhook Messages
+## Edit & Delete Sent Messages
 
-These use the webhook token (not bot token) to modify messages sent by the same webhook.
-
-### Edit a webhook message
+Uses the webhook token — not the bot token.
 
 ```bash
+# Edit
 echo '{"content":"Updated content","embeds":[]}' > /tmp/req.json
 curl -s -X PATCH \
   "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN/messages/MESSAGE_ID" \
   -H "Content-Type: application/json" \
   -d @/tmp/req.json
-```
 
-### Delete a webhook message
-
-```bash
+# Delete
 curl -s -X DELETE \
   "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN/messages/MESSAGE_ID"
 ```
@@ -174,25 +154,16 @@ curl -s -X DELETE \
 
 ## Forum Channel Webhooks
 
-Webhooks can create new forum threads with `thread_name`, or post into an existing thread with `thread_id`.
-
-### Create a new forum thread via webhook
-
 ```bash
+# Create a new forum thread
 cat > /tmp/req.json << 'EOF'
-{
-  "content": "New topic post",
-  "thread_name": "My New Thread"
-}
+{"content": "New topic post", "thread_name": "My New Thread"}
 EOF
 curl -s -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
   -H "Content-Type: application/json" \
   -d @/tmp/req.json
-```
 
-### Post into an existing thread
-
-```bash
+# Post into an existing thread
 echo '{"content":"Reply in thread"}' > /tmp/req.json
 curl -s -X POST \
   "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN?thread_id=THREAD_ID" \
@@ -202,23 +173,19 @@ curl -s -X POST \
 
 ---
 
-## Webhook event types (discord-api-types reference)
+## Webhook Types Reference
 
-When working with Application webhooks (type 3), the payload includes an event field:
-
-| Type                           | Fired when                          |
-|-------------------------------|-------------------------------------|
-| `ApplicationWebhookEventType` | Application event dispatched        |
-| `WebhookType.Incoming` (1)    | Standard channel-posting webhook    |
-| `WebhookType.ChannelFollower` (2) | Following an Announcement channel |
-| `WebhookType.Application` (3) | Used by Interactions / slash cmds  |
+| Type | Value | Description |
+|---|---|---|
+| `Incoming` | 1 | Standard channel-posting webhook |
+| `ChannelFollower` | 2 | Following an Announcement channel |
+| `Application` | 3 | Used by Interactions / slash commands |
 
 ---
 
-## Rate limits
+## Rate Limits
 
-Webhook endpoints share the same rate limit system as the rest of the API.
-Each webhook has its own per-route bucket. On HTTP 429, respect `Retry-After`.
+Each webhook has its own per-route bucket. On HTTP 429 — respect `Retry-After`.
 
 ```bash
 curl -si -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
@@ -228,9 +195,9 @@ curl -si -X POST "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" \
 
 ---
 
-## Security notes
+## Security Notes
 
-- Webhook tokens are sensitive. Anyone with the URL can post to your channel.
+- Webhook tokens are sensitive — anyone with the URL can post to the channel.
 - Rotate or delete compromised webhooks immediately via the bot token endpoint.
-- Prefer `?wait=true` when you need to track and later edit messages.
-- Never log or expose webhook URLs in public repositories.
+- Use `?wait=true` when you need to track and later edit messages.
+- Never log or commit webhook URLs to public repositories.
