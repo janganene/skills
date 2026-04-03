@@ -1,6 +1,11 @@
 ---
 name: git-commit-convention
-description: Create standardized git commit messages using Conventional Commits. Covers type selection, scope, breaking changes, and situation-based examples for both common and rarely used types.
+description: >
+  Create standardized git commit messages following the Conventional Commits specification.
+  Use this skill when writing or reviewing commit messages, choosing the right commit type,
+  handling breaking changes, or coaching others on commit format.
+  Triggers: "commit message", "git commit", "conventional commits", "commit type",
+  "breaking change", "BREAKING CHANGE footer", "commit convention".
 ---
 
 # Git Commit Convention
@@ -16,21 +21,23 @@ description: Create standardized git commit messages using Conventional Commits.
 ```
 
 **Rules**
-- Description: 50 characters or fewer, imperative mood (`add` not `added`), no period at end
-- Scope: optional, indicates area of change (e.g. `auth`, `api`, `ui`)
+- Description: 50 characters or fewer, imperative mood (`add` not `added`), no trailing period
+- Scope: optional, indicates area of change (`auth`, `api`, `ui`)
 - Body: explain *why*, not *what* — wrap at 72 characters
-- Footer: reference issues (`Closes #123`), note breaking changes
+- Footer: reference issues (`Closes #123`), flag breaking changes
+
+---
 
 ## Commit Types
 
 ### Common
 
 | Type | When to use |
-|------|-------------|
+|---|---|
 | `feat` | New feature visible to the user |
 | `fix` | Bug fix — incorrect behavior corrected |
 | `docs` | Documentation only (README, comments, docstrings) |
-| `style` | Formatting/whitespace only — no logic change |
+| `style` | Formatting / whitespace only — no logic change |
 | `refactor` | Code restructured without fixing bugs or adding features |
 | `test` | Adding or updating tests — no production code change |
 | `chore` | Tooling, packages, config — nothing user-facing |
@@ -41,9 +48,9 @@ description: Create standardized git commit messages using Conventional Commits.
 ### Occasionally Used
 
 | Type | When to use |
-|------|-------------|
-| `build` | Build system or bundler changes (webpack → vite, rollup config) |
-| `deps` | Dependency updates — often from bots (Dependabot, Renovate) |
+|---|---|
+| `build` | Build system or bundler changes (webpack → vite) |
+| `deps` | Dependency updates (Dependabot, Renovate) |
 | `security` | Security vulnerability fix, CVE patches, removing exposed secrets |
 | `hotfix` | Critical production fix shipped outside the normal release cycle |
 | `release` | Version bump, changelog generation, release tagging |
@@ -54,10 +61,11 @@ description: Create standardized git commit messages using Conventional Commits.
 | `deprecate` | Marking a function, API, or module as deprecated |
 | `remove` | Deleting dead code, unused files, or a dropped feature |
 | `i18n` | Translations, locale files, internationalization strings |
-| `l10n` | Region-specific formatting (dates, currencies, numbers) |
 | `a11y` | Accessibility — ARIA, keyboard nav, color contrast |
 | `typo` | Spelling fix in code, strings, or comments |
 | `env` | Adding, removing, or renaming environment variables |
+
+---
 
 ## Breaking Changes
 
@@ -70,6 +78,8 @@ feat(api): change response shape for /users
 
 BREAKING CHANGE: `data` field renamed to `users` in all list responses
 ```
+
+---
 
 ## Examples
 
@@ -94,7 +104,6 @@ hotfix(payment): fix crash on null card object in production
 release: v2.4.0
 wip: rough draft of notification system
 init: bootstrap project with Next.js
-config: set production log level to warn
 deprecate: mark getUserById() as deprecated, use getUser()
 remove: delete legacy stripe v1 integration
 i18n: add Korean and Japanese locale files
@@ -103,9 +112,12 @@ typo: fix "recieve" -> "receive" in error messages
 env: add REDIS_URL to .env.example
 ```
 
+---
+
 ## Workflow
 
 ### 1. Check what changed
+
 ```bash
 git diff --staged   # if files are staged
 git diff            # if nothing staged yet
@@ -113,15 +125,17 @@ git status
 ```
 
 ### 2. Choose the right type
-- Is it new behavior the user sees? → `feat`
-- Is it fixing broken behavior? → `fix`
-- Is it critical and going straight to prod? → `hotfix`
-- Is it just moving code around? → `refactor`
-- Is it only formatting? → `style`
-- Is it a security issue? → `security`
+
+- New behavior the user sees? → `feat`
+- Fixing broken behavior? → `fix`
+- Critical, going straight to prod? → `hotfix`
+- Moving code around without behavior change? → `refactor`
+- Formatting only? → `style`
+- Security issue? → `security`
 - None of the above? → `chore`
 
 ### 3. Commit
+
 ```bash
 # Single line
 git commit -m "feat(auth): add magic link login"
@@ -135,10 +149,12 @@ data array. Added a null check before mapping results.
 Closes #412"
 ```
 
+---
+
 ## Best Practices
 
 - One logical change per commit
-- Reference issues in footer: `Closes #123`, `Refs #456`
+- Reference issues in footer: `Closes #123` `Refs #456`
 - Never commit secrets (.env, credentials, private keys)
 - Squash `wip` commits before merging
 - Use `!` or `BREAKING CHANGE:` footer for breaking changes
