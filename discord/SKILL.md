@@ -1,6 +1,6 @@
 ---
 name: discord
-description: Use this skill when the user wants to build, integrate with, or send messages to Discord. Covers Discord bots using discord.js (Node.js) or discord.py (Python), direct REST API calls, and webhook integrations. Use when the user mentions Discord bots, slash commands, events, webhooks, embeds, channels, or sending messages to Discord.
+description: Use this skill when the user wants to build, integrate with, or send messages to Discord. Covers Discord bots using discord.js (Node.js) or discord.py (Python), direct REST API calls, and webhook integrations. Use when the user mentions Discord bots, slash commands, events, webhooks, embeds, channels, sending messages to Discord, mention injection (@everyone abuse), or markdown security.
 ---
 
 # Discord Integration Skill
@@ -122,3 +122,23 @@ Content-Type: application/json
 - Never hardcode tokens or webhook URLs in source code
 - Do not use a Bot Token to replicate webhook functionality, or vice versa
 - On Rate Limit (HTTP 429), wait for the `retry_after` value before retrying
+
+---
+
+## 7. Security & Markdown Safety
+
+Defend against Discord markdown vulnerabilities when handling user input.
+
+### Key Vulnerabilities
+- **Mention Injection**: User input containing `@everyone` or `@here` triggering mass pings.
+- **Masked Link Spoofing**: `[trusted.com](http://phishing.com)` hiding the real destination.
+- **Markdown Formatting**: Unintended formatting from user-supplied names or data.
+- **URL Unfurling Exfiltration**: LLM bots leaking private data via link previews.
+
+### Quick Defense Measures
+1. **Sanitize Mentions**: Wrap `@everyone` and `@here` with a zero-width space (`@\u200b`).
+2. **Authoritative Mentions Block**: Always use `allowed_mentions: { "parse": [] }` in API payloads.
+3. **Escape Markdown**: Use `discord.utils.escape_markdown` (py) or `escapeMarkdown` (js) for user-supplied strings.
+4. **LLM URL Validation**: Validate domains in LLM-generated links before sending.
+
+For detailed vulnerability patterns and code examples, see: [`references/vulnerabilities.md`](references/vulnerabilities.md)
