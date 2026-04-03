@@ -35,11 +35,9 @@ else:
 
 # Check DISCORD_BOT_TOKEN via environment variable
 if os.getenv("DISCORD_BOT_TOKEN"):
-    print("DISCORD_BOT_TOKEN is set")
+    print("DISCORD_BOT_TOKEN is set in environment")
 else:
-    if os.path.exists(".env"):
-        print(".env file exists but DISCORD_BOT_TOKEN is not set or python-dotenv is missing")
-    else:
-        print(".env file not found and DISCORD_BOT_TOKEN not set in environment")
+    print("DISCORD_BOT_TOKEN is missing or could not be loaded")
+    print("Check if you have a .env file or env vars set correctly")
 
 print("\n=== Check Complete ===")

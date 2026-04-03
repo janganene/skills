@@ -1,5 +1,5 @@
 #!/bin/bash
-# discord.js environment check script
+# discord.js environment check script (refactored for security)
 echo "=== discord.js Environment Check ==="
 
 # Check Node.js
@@ -11,25 +11,24 @@ else
   exit 1
 fi
 
-# Check discord.js
-if node -e "require('discord.js')" 2>/dev/null; then
-  DJ_VER=$(node -e "console.log(require('discord.js').version)")
-  echo "discord.js: v$DJ_VER"
-else
-  echo "discord.js not found. Run: npm install discord.js"
-fi
-
-# Check .env
-if [ -f ".env" ]; then
-  echo ".env file found"
-  if grep -q "DISCORD_BOT_TOKEN" .env; then
-    echo "DISCORD_BOT_TOKEN is set"
-  else
-    echo "DISCORD_BOT_TOKEN is missing from .env"
-  fi
-else
-  echo ".env file not found"
-fi
+# Check discord.js and environment variables via runtime
+node -e "
+try {
+  const dj = require('discord.js');
+  console.log('discord.js: v' + dj.version);
+  
+  // Try loading dotenv if available
+  try { require('dotenv').config(); } catch (e) {}
+  
+  if (process.env.DISCORD_BOT_TOKEN) {
+    console.log('DISCORD_BOT_TOKEN is set in environment');
+  } else {
+    console.log('DISCORD_BOT_TOKEN is missing (check your .env file)');
+  }
+} catch (e) {
+  console.log('discord.js not found. Run: npm install discord.js');
+}
+"
 
 echo ""
 echo "=== Check Complete ==="
