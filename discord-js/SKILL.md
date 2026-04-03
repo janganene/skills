@@ -1,39 +1,37 @@
 ---
 name: discord-js
 description: >
-  Build Discord bots using discord.js v14 (Node.js).
+  Build Discord bots using discord.js v14 (Node.js / TypeScript).
   Use this skill when writing a JavaScript or TypeScript Discord bot, creating slash commands
-  with SlashCommandBuilder, handling gateway events (messageCreate, interactionCreate, guildMemberAdd, etc.),
-  deploying commands via REST, building buttons and select menus, using message component collectors,
-  configuring GatewayIntentBits, working with embeds, or managing guilds/members/roles programmatically.
-  Triggers: "discord.js", "JavaScript Discord bot", "slash command builder", "interactionCreate",
-  "GatewayIntentBits", "ButtonBuilder", "EmbedBuilder", "REST deploy", "discord.js v14".
+  with SlashCommandBuilder, handling gateway events (messageCreate, interactionCreate,
+  guildMemberAdd, etc.), deploying commands via REST, building buttons and select menus,
+  using message component collectors, configuring GatewayIntentBits, working with embeds,
+  or managing guilds / members / roles programmatically.
+  Do not use for Python Discord bots — use discord-py-sdk instead.
+  Triggers: "discord.js", "JavaScript Discord bot", "TypeScript Discord bot",
+  "slash command builder", "interactionCreate", "GatewayIntentBits", "ButtonBuilder",
+  "EmbedBuilder", "REST deploy commands", "discord.js v14".
+compatibility:
+  runtime: Node.js 16.11.0+
+  package: discord.js@14
 ---
 
 # discord.js v14
 
-Official docs: https://discord.js.org  
-Guide: https://discordjs.guide  
-Requires Node.js 16.11.0+
-
-```
-npm install discord.js
-```
+Official docs: https://discord.js.org
+Guide: https://discordjs.guide
+Install: `npm install discord.js`
 
 ---
 
 ## Setup
 
-### Project structure (recommended)
+### Recommended project structure
 
 ```
 bot/
-  commands/
-    ping.js
-    kick.js
-  events/
-    ready.js
-    interactionCreate.js
+  commands/       ← one file per slash command
+  events/         ← one file per event
   deploy-commands.js
   index.js
   config.json
@@ -54,85 +52,66 @@ bot/
 ## Client initialization
 
 `GatewayIntentBits` controls which gateway events the bot receives.
-Always specify only what is needed — avoid enabling all intents unnecessarily.
+Enable only what is needed — avoid enabling all intents.
 
 ```js
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.Guilds,             // guild info, channels, roles
-    GatewayIntentBits.GuildMembers,       // member join/leave/update (Privileged)
-    GatewayIntentBits.GuildMessages,      // messageCreate, messageUpdate, messageDelete
-    GatewayIntentBits.MessageContent,     // access message.content (Privileged)
+    GatewayIntentBits.Guilds,                // guild info, channels, roles
+    GatewayIntentBits.GuildMembers,          // join/leave/update (Privileged)
+    GatewayIntentBits.GuildMessages,         // messageCreate, messageUpdate, messageDelete
+    GatewayIntentBits.MessageContent,        // access message.content (Privileged)
     GatewayIntentBits.GuildMessageReactions, // reactionAdd/Remove
-    GatewayIntentBits.DirectMessages,     // DM events
+    GatewayIntentBits.DirectMessages,        // DM events
   ],
-  partials: [Partials.Channel],           // required for DM events
+  partials: [Partials.Channel],              // required for DM events
 });
 
 client.commands = new Collection();
 ```
 
-Privileged intents (GuildMembers, MessageContent, Presences) must also be enabled in the
-Discord Developer Portal under Bot -> Privileged Gateway Intents.
+> Privileged intents (GuildMembers, MessageContent, Presences) must also be enabled in
+> Discord Developer Portal → Bot → Privileged Gateway Intents.
 
 ---
 
 ## Events
 
-In v14, all built-in event names are accessed via the `Events` enum.
-Do not use raw string event names.
+In v14 use the `Events` enum — never raw string event names.
 
 ```js
 const { Events } = require('discord.js');
 
-client.once(Events.ClientReady, (readyClient) => {
-  console.log(`Logged in as ${readyClient.user.tag}`);
-});
-
-client.on(Events.MessageCreate, (message) => {
-  if (message.author.bot) return;
-  console.log(message.content);
-});
-
-client.on(Events.GuildMemberAdd, (member) => {
-  console.log(`${member.user.tag} joined ${member.guild.name}`);
-});
-
-client.on(Events.GuildMemberRemove, (member) => {
-  console.log(`${member.user.tag} left`);
-});
-
-client.on(Events.MessageReactionAdd, (reaction, user) => {
-  console.log(`${user.tag} reacted with ${reaction.emoji.name}`);
-});
+client.once(Events.ClientReady, (c) => console.log(`Logged in as ${c.user.tag}`));
+client.on(Events.MessageCreate, (msg) => { if (!msg.author.bot) console.log(msg.content); });
+client.on(Events.GuildMemberAdd, (member) => console.log(`${member.user.tag} joined`));
+client.on(Events.MessageReactionAdd, (reaction, user) =>
+  console.log(`${user.tag} reacted with ${reaction.emoji.name}`)
+);
 
 client.login(token);
 ```
 
 Common `Events` values:
 
-| Enum value                        | Fired when                              |
-|-----------------------------------|-----------------------------------------|
-| `Events.ClientReady`              | Bot connected and ready                 |
-| `Events.MessageCreate`            | New message posted                      |
-| `Events.MessageUpdate`            | Message edited                          |
-| `Events.MessageDelete`            | Message deleted                         |
-| `Events.InteractionCreate`        | Slash command / button / select used    |
-| `Events.GuildMemberAdd`           | Member joined (requires GuildMembers)   |
-| `Events.GuildMemberRemove`        | Member left (requires GuildMembers)     |
-| `Events.GuildMemberUpdate`        | Member updated (nick, role, timeout...) |
-| `Events.MessageReactionAdd`       | Reaction added                          |
-| `Events.GuildAuditLogEntryCreate` | Audit log entry created (v14+)          |
+| Enum | Fires when |
+|---|---|
+| `Events.ClientReady` | Bot connected and ready |
+| `Events.MessageCreate` | New message posted |
+| `Events.InteractionCreate` | Slash command / button / select used |
+| `Events.GuildMemberAdd` | Member joined (requires GuildMembers) |
+| `Events.GuildMemberRemove` | Member left |
+| `Events.GuildMemberUpdate` | Member nick/role/timeout changed |
+| `Events.MessageReactionAdd` | Reaction added |
+| `Events.GuildAuditLogEntryCreate` | Audit log entry created (v14+) |
 
 ---
 
 ## Slash Commands
 
 ### Define a command
-
-Each command is a separate file exporting `data` (SlashCommandBuilder) and `execute`.
 
 ```js
 // commands/ping.js
@@ -144,8 +123,7 @@ module.exports = {
     .setDescription('Replies with Pong!'),
 
   async execute(interaction) {
-    const latency = interaction.client.ws.ping;
-    await interaction.reply(`Pong! Latency: ${latency}ms`);
+    await interaction.reply(`Pong! Latency: ${interaction.client.ws.ping}ms`);
   },
 };
 ```
@@ -153,38 +131,21 @@ module.exports = {
 ### Command with options
 
 ```js
-// commands/greet.js
-const { SlashCommandBuilder } = require('discord.js');
-
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('greet')
-    .setDescription('Greet a user')
-    .addUserOption((opt) =>
-      opt.setName('target').setDescription('User to greet').setRequired(true)
-    )
-    .addStringOption((opt) =>
-      opt.setName('message').setDescription('Custom message').setRequired(false)
-    ),
-
-  async execute(interaction) {
-    const target = interaction.options.getUser('target');
-    const msg = interaction.options.getString('message') ?? 'Hello!';
-    await interaction.reply(`${msg}, ${target}!`);
-  },
-};
+new SlashCommandBuilder()
+  .setName('greet')
+  .setDescription('Greet a user')
+  .addUserOption((o) => o.setName('target').setDescription('Who to greet').setRequired(true))
+  .addStringOption((o) => o.setName('message').setDescription('Custom message'))
 ```
 
-Option types: `addStringOption`, `addIntegerOption`, `addNumberOption`, `addBooleanOption`,
-`addUserOption`, `addChannelOption`, `addRoleOption`, `addMentionableOption`, `addAttachmentOption`.
+Option types: `addStringOption` `addIntegerOption` `addNumberOption` `addBooleanOption`
+`addUserOption` `addChannelOption` `addRoleOption` `addAttachmentOption`
 
-### String option with choices
+### String choices
 
 ```js
-.addStringOption((opt) =>
-  opt.setName('color')
-    .setDescription('Pick a color')
-    .setRequired(true)
+.addStringOption((o) =>
+  o.setName('color').setDescription('Pick a color').setRequired(true)
     .addChoices(
       { name: 'Red',   value: 'red'   },
       { name: 'Green', value: 'green' },
@@ -198,18 +159,12 @@ Option types: `addStringOption`, `addIntegerOption`, `addNumberOption`, `addBool
 ```js
 new SlashCommandBuilder()
   .setName('config')
-  .setDescription('Bot config')
-  .addSubcommand((sub) =>
-    sub.setName('set').setDescription('Set a value')
-      .addStringOption((opt) => opt.setName('key').setDescription('Key').setRequired(true))
-  )
-  .addSubcommand((sub) =>
-    sub.setName('get').setDescription('Get a value')
-  )
-```
+  .addSubcommand((s) => s.setName('set').setDescription('Set value')
+    .addStringOption((o) => o.setName('key').setDescription('Key').setRequired(true)))
+  .addSubcommand((s) => s.setName('get').setDescription('Get value'))
 
-```js
-const sub = interaction.options.getSubcommand(); // 'set' or 'get'
+// In handler:
+const sub = interaction.options.getSubcommand(); // 'set' | 'get'
 ```
 
 ---
@@ -219,27 +174,21 @@ const sub = interaction.options.getSubcommand(); // 'set' or 'get'
 Run `deploy-commands.js` once whenever command definitions change.
 
 ```js
-// deploy-commands.js
 const { REST, Routes } = require('discord.js');
 const { token, clientId, guildId } = require('./config.json');
-const fs   = require('node:fs');
-const path = require('node:path');
+const fs = require('node:fs'), path = require('node:path');
 
-const commands = [];
-const commandsPath = path.join(__dirname, 'commands');
-for (const file of fs.readdirSync(commandsPath).filter((f) => f.endsWith('.js'))) {
-  const command = require(path.join(commandsPath, file));
-  commands.push(command.data.toJSON());
-}
+const commands = fs.readdirSync(path.join(__dirname, 'commands'))
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => require(path.join(__dirname, 'commands', f)).data.toJSON());
 
 const rest = new REST().setToken(token);
 
 (async () => {
-  // Guild-scoped: instant, for development
+  // Guild-scoped — instant, use for development
   await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-  console.log('Guild commands registered.');
 
-  // Global: takes up to 1 hour to propagate
+  // Global — propagates in up to 1 hour, use for production
   // await rest.put(Routes.applicationCommands(clientId), { body: commands });
 })();
 ```
@@ -249,34 +198,25 @@ const rest = new REST().setToken(token);
 ## Interaction Handler
 
 ```js
-// index.js (interactionCreate section)
-const { Events } = require('discord.js');
+const { Events, MessageFlags } = require('discord.js');
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+    const cmd = client.commands.get(interaction.commandName);
+    if (!cmd) return;
     try {
-      await command.execute(interaction);
-    } catch (error) {
-      console.error(error);
-      const reply = { content: 'An error occurred.', flags: MessageFlags.Ephemeral };
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(reply);
-      } else {
-        await interaction.reply(reply);
-      }
+      await cmd.execute(interaction);
+    } catch (err) {
+      console.error(err);
+      const msg = { content: 'An error occurred.', flags: MessageFlags.Ephemeral };
+      interaction.replied || interaction.deferred
+        ? await interaction.followUp(msg)
+        : await interaction.reply(msg);
     }
     return;
   }
-
-  if (interaction.isButton()) {
-    // handle button interactions
-  }
-
-  if (interaction.isStringSelectMenu()) {
-    // handle select menu interactions
-  }
+  if (interaction.isButton()) { /* handle buttons */ }
+  if (interaction.isStringSelectMenu()) { /* handle select menus */ }
 });
 ```
 
@@ -284,54 +224,28 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 ## Interaction Responses
 
-### Reply
-
 ```js
+// Plain reply
 await interaction.reply('Pong!');
 
-// Ephemeral (only visible to command executor)
+// Ephemeral
 const { MessageFlags } = require('discord.js');
-await interaction.reply({ content: 'Only you can see this.', flags: MessageFlags.Ephemeral });
-```
+await interaction.reply({ content: 'Only you see this.', flags: MessageFlags.Ephemeral });
 
-### Deferred reply (for operations > 3 seconds)
-
-Discord requires a response within 3 seconds. Defer first, then follow up.
-
-```js
-await interaction.deferReply();                    // shows "Bot is thinking..."
+// Deferred (long operations — respond within 3 s)
+await interaction.deferReply();
 await doSomethingSlow();
-await interaction.editReply('Done!');              // replaces the deferred message
+await interaction.editReply('Done!');
 
-// Deferred ephemeral
-await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-```
-
-### Follow-up
-
-```js
-await interaction.reply('First response.');
+// Follow-up
 await interaction.followUp('Additional message.');
-await interaction.followUp({ content: 'Ephemeral follow-up.', flags: MessageFlags.Ephemeral });
-```
 
-Note: the first `followUp` after a `deferReply` edits the "thinking..." message.
-Subsequent `followUp` calls create new messages.
-Interaction tokens are valid for 15 minutes after the initial response.
-
-### Edit and delete reply
-
-```js
-await interaction.editReply('Updated content.');
+// Edit / delete
+await interaction.editReply('Updated.');
 await interaction.deleteReply();
 ```
 
-### Fetch reply message (with API call savings)
-
-```js
-const response = await interaction.reply({ content: 'Pong!', withResponse: true });
-const message = response.resource.message;
-```
+Interaction tokens are valid for **15 minutes** after the initial response.
 
 ---
 
@@ -357,56 +271,31 @@ await interaction.reply({ embeds: [embed] });
 
 ---
 
-## Buttons and Action Rows
+## Buttons & Action Rows
 
 ```js
 const { ButtonBuilder, ButtonStyle, ActionRowBuilder, ComponentType, MessageFlags } = require('discord.js');
 
-const confirm = new ButtonBuilder()
-  .setCustomId('confirm')
-  .setLabel('Confirm')
-  .setStyle(ButtonStyle.Success);
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder().setCustomId('confirm').setLabel('Confirm').setStyle(ButtonStyle.Success),
+  new ButtonBuilder().setCustomId('cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger),
+);
 
-const cancel = new ButtonBuilder()
-  .setCustomId('cancel')
-  .setLabel('Cancel')
-  .setStyle(ButtonStyle.Danger);
+const resp = await interaction.reply({ content: 'Sure?', components: [row], withResponse: true });
 
-const row = new ActionRowBuilder().addComponents(confirm, cancel);
-
-const response = await interaction.reply({
-  content: 'Are you sure?',
-  components: [row],
-  withResponse: true,
-});
-
-// Collect one button press from the same user
 try {
-  const confirmation = await response.resource.message.awaitMessageComponent({
+  const btn = await resp.resource.message.awaitMessageComponent({
     filter: (i) => i.user.id === interaction.user.id,
     componentType: ComponentType.Button,
     time: 30_000,
   });
-
-  if (confirmation.customId === 'confirm') {
-    await confirmation.update({ content: 'Action confirmed.', components: [] });
-  } else {
-    await confirmation.update({ content: 'Cancelled.', components: [] });
-  }
+  await btn.update({ content: btn.customId === 'confirm' ? 'Confirmed.' : 'Cancelled.', components: [] });
 } catch {
   await interaction.editReply({ content: 'Timed out.', components: [] });
 }
 ```
 
-Button styles:
-
-| Style                   | Color   | Use case                     |
-|-------------------------|---------|------------------------------|
-| `ButtonStyle.Primary`   | Blue    | Main action                  |
-| `ButtonStyle.Secondary` | Gray    | Neutral / cancel             |
-| `ButtonStyle.Success`   | Green   | Confirm / positive           |
-| `ButtonStyle.Danger`    | Red     | Destructive / irreversible   |
-| `ButtonStyle.Link`      | Gray    | External URL (no customId)   |
+Button styles: `Primary` (blue) · `Secondary` (gray) · `Success` (green) · `Danger` (red) · `Link` (external URL)
 
 ---
 
@@ -418,110 +307,38 @@ const { StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder
 const select = new StringSelectMenuBuilder()
   .setCustomId('role-select')
   .setPlaceholder('Choose a role...')
-  .setMinValues(1)
-  .setMaxValues(2)
   .addOptions(
-    new StringSelectMenuOptionBuilder().setLabel('Admin').setValue('admin').setDescription('Full access'),
+    new StringSelectMenuOptionBuilder().setLabel('Admin').setValue('admin'),
     new StringSelectMenuOptionBuilder().setLabel('Member').setValue('member'),
-    new StringSelectMenuOptionBuilder().setLabel('Guest').setValue('guest'),
   );
 
-const row = new ActionRowBuilder().addComponents(select);
-await interaction.reply({ content: 'Select a role:', components: [row] });
-```
+await interaction.reply({ content: 'Pick a role:', components: [new ActionRowBuilder().addComponents(select)] });
 
-Handle in interactionCreate:
-
-```js
+// In interactionCreate:
 if (interaction.isStringSelectMenu() && interaction.customId === 'role-select') {
-  const selected = interaction.values; // string[]
-  await interaction.reply(`You selected: ${selected.join(', ')}`);
+  await interaction.reply(`Selected: ${interaction.values.join(', ')}`);
 }
-```
-
----
-
-## Message Component Collectors
-
-Use when you want to collect multiple interactions from a component over time.
-
-```js
-const { ComponentType } = require('discord.js');
-
-const collector = message.createMessageComponentCollector({
-  componentType: ComponentType.Button,
-  time: 60_000,                           // 60 seconds
-});
-
-collector.on('collect', async (i) => {
-  if (i.user.id !== interaction.user.id) {
-    await i.reply({ content: 'Not your button.', flags: MessageFlags.Ephemeral });
-    return;
-  }
-  await i.update({ content: `Clicked: ${i.customId}` });
-});
-
-collector.on('end', (collected) => {
-  console.log(`Collected ${collected.size} interactions.`);
-});
 ```
 
 ---
 
 ## Moderation
 
-### Kick a member
-
 ```js
-async execute(interaction) {
-  const member = interaction.options.getMember('target');
-  const reason = interaction.options.getString('reason') ?? 'No reason provided';
+// Kick
+if (!member.kickable) return interaction.reply({ content: 'Cannot kick.', flags: MessageFlags.Ephemeral });
+await member.kick(reason);
 
-  if (!member.kickable) {
-    return interaction.reply({ content: 'Cannot kick this member.', flags: MessageFlags.Ephemeral });
-  }
+// Ban  (deleteMessageSeconds max 604800)
+await member.ban({ deleteMessageSeconds: 86400, reason });
 
-  await member.kick(reason);
-  await interaction.reply(`Kicked ${member.user.tag}. Reason: ${reason}`);
-}
-```
-
-### Ban a member
-
-```js
-await member.ban({ deleteMessageSeconds: 86400, reason: 'Spamming' });
-await interaction.reply(`Banned ${member.user.tag}.`);
-```
-
-### Timeout a member
-
-```js
-// Timeout for 10 minutes
+// Timeout  (ms — 10 minutes)
 await member.timeout(10 * 60 * 1000, 'Breaking rules');
+await member.timeout(null);  // remove timeout
 
-// Remove timeout
-await member.timeout(null);
-```
-
-### Manage roles
-
-```js
+// Roles
 await member.roles.add(role);
 await member.roles.remove(role);
-```
-
----
-
-## Sending Messages to Channels
-
-```js
-// Fetch and send to a channel by ID
-const channel = await client.channels.fetch('CHANNEL_ID');
-await channel.send('Hello!');
-await channel.send({ embeds: [embed] });
-
-// Send from within a command
-await interaction.channel.send('Message in the same channel.');
 ```
 
 ---
@@ -531,50 +348,36 @@ await interaction.channel.send('Message in the same channel.');
 ```js
 const { PermissionFlagsBits } = require('discord.js');
 
-// Check before acting
-if (!interaction.memberPermissions.has(PermissionFlagsBits.KickMembers)) {
-  return interaction.reply({ content: 'You lack kick permissions.', flags: MessageFlags.Ephemeral });
-}
+if (!interaction.memberPermissions.has(PermissionFlagsBits.KickMembers))
+  return interaction.reply({ content: 'Missing permissions.', flags: MessageFlags.Ephemeral });
 
-// Require permissions on command definition
+// Restrict command to members with BanMembers permission
 new SlashCommandBuilder()
   .setName('ban')
-  .setDescription('Ban a member')
   .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
 ```
 
 ---
 
-## Error handling
+## Error Handling
 
 ```js
-process.on('unhandledRejection', (error) => {
-  console.error('Unhandled rejection:', error);
-});
-
-client.on(Events.Error, (error) => {
-  console.error('Client error:', error);
-});
+process.on('unhandledRejection', (err) => console.error('Unhandled:', err));
+client.on(Events.Error, (err) => console.error('Client error:', err));
 ```
 
 ---
 
-## v14 breaking changes to remember
+## v14 Migration Reference
 
-These are the most common mistakes when migrating from v13:
-
-| v13                           | v14                                  |
-|-------------------------------|--------------------------------------|
-| `Intents.FLAGS.Guilds`        | `GatewayIntentBits.Guilds`           |
-| `partials: ['CHANNEL']`       | `partials: [Partials.Channel]`       |
-| `type: 'CHAT_INPUT'`          | `ApplicationCommandType.ChatInput`   |
-| `type: 'STRING'` (option)     | `ApplicationCommandOptionType.String`|
-| `style: 'PRIMARY'`            | `ButtonStyle.Primary`                |
-| `ephemeral: true`             | `flags: MessageFlags.Ephemeral`      |
-| `componentType: 'BUTTON'`     | `componentType: ComponentType.Button`|
-| `client.on('ready', ...)`     | `client.once(Events.ClientReady, ...)`|
-| `client.on('message', ...)`   | `client.on(Events.MessageCreate, ...)`|
-| `MessageEmbed`                | `EmbedBuilder`                       |
-| `MessageActionRow`            | `ActionRowBuilder`                   |
-| `MessageButton`               | `ButtonBuilder`                      |
-| `fetchReply: true`            | `withResponse: true`                 |
+| v13 | v14 |
+|---|---|
+| `Intents.FLAGS.Guilds` | `GatewayIntentBits.Guilds` |
+| `partials: ['CHANNEL']` | `partials: [Partials.Channel]` |
+| `ephemeral: true` | `flags: MessageFlags.Ephemeral` |
+| `fetchReply: true` | `withResponse: true` |
+| `MessageEmbed` | `EmbedBuilder` |
+| `MessageActionRow` | `ActionRowBuilder` |
+| `MessageButton` | `ButtonBuilder` |
+| `client.on('ready', ...)` | `client.once(Events.ClientReady, ...)` |
+| `client.on('message', ...)` | `client.on(Events.MessageCreate, ...)` |
