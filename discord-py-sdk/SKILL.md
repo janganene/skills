@@ -2,67 +2,58 @@
 name: discord-py-sdk
 description: >
   Build Discord bots using the discord.py Python SDK (v2.x).
-  Use this skill when writing a Python Discord bot, handling gateway events (on_message, on_member_join,
-  on_reaction_add, etc.), creating slash commands with app_commands, configuring Intents,
-  using the commands.Bot extension, managing cogs, or working with discord.py's async API.
+  Use this skill when writing a Python Discord bot, handling gateway events (on_message,
+  on_member_join, on_reaction_add, etc.), creating slash commands with app_commands,
+  configuring Intents, using commands.Bot, managing cogs, or working with discord.py's async API.
+  Do not use for JavaScript/TypeScript bots — use discord-js instead.
   Triggers: "discord.py", "Python Discord bot", "slash command", "on_message event",
   "discord.Client", "commands.Bot", "cog", "app_commands", "gateway intents".
+compatibility:
+  runtime: Python 3.8+
+  package: discord.py>=2.0
 ---
 
 # discord.py SDK (v2.x)
 
-Official docs: https://discordpy.readthedocs.io/en/stable/  
-Install: `pip install discord.py`  
-Requires Python 3.8+
+Docs: https://discordpy.readthedocs.io/en/stable/
+Install: `pip install discord.py`
 
 ---
 
-## Core concepts
+## Core client classes
 
-discord.py provides two main client classes:
+| Class | Use when |
+|---|---|
+| `discord.Client` | Low-level, raw gateway events, full control |
+| `commands.Bot` | High-level, adds prefix commands, cogs, checks |
 
-- `discord.Client` — low-level, handles raw gateway events
-- `discord.ext.commands.Bot` — higher-level, adds prefix commands, cogs, and checks
-
-Both accept an `intents` argument which controls which gateway events are received.
+Both require an `intents` argument.
 
 ---
 
 ## Intents
 
-Intents are required to receive specific gateway events. Always configure before connecting.
-
 ```python
 import discord
 
-# Recommended default: all except presences, members, message_content
-intents = discord.Intents.default()
-
-# Full access (requires approval in Developer Portal for presences/members/message_content)
-intents = discord.Intents.all()
-
-# Manual selection
-intents = discord.Intents.default()
-intents.members = True          # on_member_join, on_member_remove, on_member_update
-intents.message_content = True  # access message.content in on_message
-intents.presences = True        # presence/status updates
+intents = discord.Intents.default()        # recommended base
+intents.members = True                     # on_member_join/remove/update (Privileged)
+intents.message_content = True            # access message.content  (Privileged)
+intents.presences = True                  # presence/status updates (Privileged)
 ```
 
-Privileged intents (members, presences, message_content) must also be enabled in the
-Discord Developer Portal under Bot -> Privileged Gateway Intents.
+> Privileged intents must also be enabled in Discord Developer Portal
+> → Bot → Privileged Gateway Intents.
 
 ---
 
 ## discord.Client (low-level)
-
-Use when you need full control without the commands extension.
 
 ```python
 import discord
 
 intents = discord.Intents.default()
 intents.message_content = True
-
 client = discord.Client(intents=intents)
 
 @client.event
@@ -83,8 +74,6 @@ client.run("YOUR_BOT_TOKEN")
 
 ## commands.Bot (recommended)
 
-Provides prefix commands, cogs, checks, and hooks.
-
 ```python
 import discord
 from discord.ext import commands
@@ -92,7 +81,6 @@ from discord.ext import commands
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
@@ -106,16 +94,15 @@ async def ping(ctx: commands.Context):
 bot.run("YOUR_BOT_TOKEN")
 ```
 
-### Bot constructor parameters
+### Constructor parameters
 
-| Parameter        | Type                     | Description                                   |
-|------------------|--------------------------|-----------------------------------------------|
-| `command_prefix` | str or callable or list  | Prefix(es) that trigger commands              |
-| `intents`        | `discord.Intents`        | Required. Gateway intents to subscribe to     |
-| `help_command`   | `HelpCommand` or None    | Built-in help. Pass `None` to disable         |
-| `description`    | str                      | Shown in default help output                  |
-| `owner_id`       | int                      | User ID of the bot owner (for `is_owner()`)   |
-| `case_insensitive` | bool                   | If True, commands are case-insensitive        |
+| Parameter | Description |
+|---|---|
+| `command_prefix` | str, callable, or list |
+| `intents` | `discord.Intents` (required) |
+| `help_command` | Pass `None` to disable built-in help |
+| `owner_id` | int — enables `@commands.is_owner()` |
+| `case_insensitive` | bool — case-insensitive prefix commands |
 
 ---
 
@@ -127,33 +114,17 @@ async def greet(ctx: commands.Context, *, name: str = "there"):
     await ctx.send(f"Hello, {name}!")
 
 @bot.command()
-async def info(ctx: commands.Context, member: discord.Member = None):
-    member = member or ctx.author
-    embed = discord.Embed(title=member.display_name, color=member.color)
-    embed.set_thumbnail(url=member.display_avatar.url)
-    embed.add_field(name="Joined", value=member.joined_at.strftime("%Y-%m-%d"))
-    await ctx.send(embed=embed)
-```
-
-### Converters
-
-discord.py automatically converts arguments:
-
-```python
-@bot.command()
 async def kick(ctx, member: discord.Member, *, reason: str = "No reason"):
     await member.kick(reason=reason)
     await ctx.send(f"Kicked {member.mention}. Reason: {reason}")
 ```
 
-Built-in converters: `discord.Member`, `discord.User`, `discord.TextChannel`,
-`discord.Role`, `discord.Emoji`, `int`, `float`.
+Built-in converters: `discord.Member` `discord.User` `discord.TextChannel`
+`discord.Role` `discord.Emoji` `int` `float`
 
 ---
 
 ## Slash Commands (app_commands)
-
-Slash commands use `discord.app_commands` and require syncing to Discord.
 
 ```python
 import discord
@@ -165,8 +136,8 @@ tree = app_commands.CommandTree(client)
 
 @client.event
 async def on_ready():
-    await tree.sync()  # sync globally (takes up to 1 hour to propagate)
-    print(f"Synced commands. Logged in as {client.user}")
+    await tree.sync()       # global sync — up to 1h to propagate
+    print(f"Synced. Logged in as {client.user}")
 
 @tree.command(name="hello", description="Greet someone")
 @app_commands.describe(name="The name to greet")
@@ -176,7 +147,7 @@ async def hello(interaction: discord.Interaction, name: str = "World"):
 client.run("YOUR_BOT_TOKEN")
 ```
 
-### Sync to a specific guild (instant, for development)
+### Guild-scoped sync (instant, for development)
 
 ```python
 GUILD_ID = discord.Object(id=YOUR_GUILD_ID)
@@ -187,144 +158,73 @@ async def on_ready():
     await tree.sync(guild=GUILD_ID)
 ```
 
-### Slash command with choices
+### Choices and ephemeral
 
 ```python
-@tree.command(name="color", description="Pick a color")
+@tree.command()
 @app_commands.choices(color=[
-    app_commands.Choice(name="Red",   value="red"),
-    app_commands.Choice(name="Green", value="green"),
-    app_commands.Choice(name="Blue",  value="blue"),
+    app_commands.Choice(name="Red", value="red"),
+    app_commands.Choice(name="Blue", value="blue"),
 ])
 async def color(interaction: discord.Interaction, color: app_commands.Choice[str]):
-    await interaction.response.send_message(f"You chose {color.name}.")
+    await interaction.response.send_message(f"You chose {color.name}.", ephemeral=True)
 ```
 
-### Ephemeral response (visible only to the user)
-
-```python
-await interaction.response.send_message("Only you can see this.", ephemeral=True)
-```
-
-### Deferred response (for long operations)
+### Deferred response (operations > 3 s)
 
 ```python
 @tree.command()
 async def slow(interaction: discord.Interaction):
-    await interaction.response.defer()         # acknowledge within 3 seconds
+    await interaction.response.defer()      # acknowledge within 3 s
     await some_long_operation()
-    await interaction.followup.send("Done!")   # send actual response
+    await interaction.followup.send("Done!")
 ```
 
 ---
 
 ## Gateway Events
 
-Events fired by discord.py when gateway events are received.
-Register with `@client.event` or `@bot.event`.
-
-### Connection events
-
 ```python
+# Connection
 @bot.event
 async def on_ready():
-    # Fired when the bot has fully connected and cached guild data.
-    # May fire multiple times on reconnect.
-    print(f"Ready: {bot.user}")
-```
+    print(f"Ready: {bot.user}")  # may fire multiple times on reconnect
 
-### Message events
-
-```python
+# Messages  (requires intents.message_content)
 @bot.event
 async def on_message(message: discord.Message):
-    # Requires Intents.message_content for message.content access.
     if message.author.bot:
         return
-    await bot.process_commands(message)  # required when overriding on_message with commands.Bot
+    await bot.process_commands(message)  # required with commands.Bot
 
 @bot.event
-async def on_message_edit(before: discord.Message, after: discord.Message):
-    pass
-
+async def on_message_edit(before: discord.Message, after: discord.Message): ...
 @bot.event
-async def on_message_delete(message: discord.Message):
-    pass
-```
+async def on_message_delete(message: discord.Message): ...
 
-### Member events
-
-```python
+# Members  (requires intents.members)
 @bot.event
 async def on_member_join(member: discord.Member):
-    # Requires Intents.members
-    channel = member.guild.system_channel
-    if channel:
+    if channel := member.guild.system_channel:
         await channel.send(f"Welcome {member.mention}!")
 
 @bot.event
-async def on_member_remove(member: discord.Member):
-    # Requires Intents.members
-    pass
-
+async def on_member_remove(member: discord.Member): ...
 @bot.event
-async def on_member_update(before: discord.Member, after: discord.Member):
-    # Fires on nickname, role, timeout, avatar, or flag changes.
-    # Requires Intents.members
-    pass
-```
+async def on_member_update(before: discord.Member, after: discord.Member): ...
 
-### Reaction events
-
-```python
+# Reactions  (requires intents.reactions)
 @bot.event
-async def on_reaction_add(reaction: discord.Reaction, user: discord.Member | discord.User):
-    # Requires Intents.reactions
-    # For uncached messages use on_raw_reaction_add instead.
-    pass
-
+async def on_reaction_add(reaction: discord.Reaction, user): ...
 @bot.event
-async def on_reaction_remove(reaction: discord.Reaction, user: discord.Member | discord.User):
-    # Requires Intents.reactions and Intents.members
-    pass
-```
-
-### Guild / channel events
-
-```python
-@bot.event
-async def on_guild_channel_create(channel: discord.abc.GuildChannel):
-    # Requires Intents.guilds
-    pass
-
-@bot.event
-async def on_guild_channel_delete(channel: discord.abc.GuildChannel):
-    pass
-
-@bot.event
-async def on_guild_channel_update(before, after):
-    pass
-```
-
-### AutoMod events (v2.0+)
-
-```python
-@bot.event
-async def on_automod_rule_create(rule: discord.AutoModRule):
-    # Requires Intents.auto_moderation_configuration and manage_guild permission
-    pass
-
-@bot.event
-async def on_automod_action(execution: discord.AutoModAction):
-    # Requires Intents.auto_moderation_execution and manage_guild
-    pass
+async def on_reaction_remove(reaction: discord.Reaction, user): ...
 ```
 
 ---
 
 ## Cogs
 
-Cogs are classes that group related commands and listeners. Use them to organize large bots.
+Cogs group related commands and listeners. Use them to organize large bots.
 
 ```python
 # cogs/moderation.py
@@ -337,7 +237,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(kick_members=True)
-    async def kick(self, ctx: commands.Context, member: discord.Member, *, reason="No reason"):
+    async def kick(self, ctx, member: discord.Member, *, reason="No reason"):
         await member.kick(reason=reason)
         await ctx.send(f"Kicked {member.mention}.")
 
@@ -363,15 +263,12 @@ asyncio.run(main())
 
 ---
 
-## Checks and Permissions
+## Checks & Permissions
 
 ```python
-from discord.ext import commands
-
 @bot.command()
 @commands.has_role("Admin")
-async def secret(ctx):
-    await ctx.send("Admin-only content.")
+async def secret(ctx): ...
 
 @bot.command()
 @commands.has_permissions(manage_messages=True)
@@ -392,66 +289,47 @@ async def shutdown(ctx):
 
 ---
 
-## Sending Messages and Embeds
+## Sending Messages & Embeds
 
 ```python
-# Plain message
 await channel.send("Hello!")
-
-# Mention a user
 await channel.send(f"Hey {member.mention}!")
 
-# Embed
-embed = discord.Embed(
-    title="Server Stats",
-    description="Current statistics",
-    color=discord.Color.blue()
-)
+embed = discord.Embed(title="Stats", color=discord.Color.blue())
 embed.add_field(name="Members", value=str(guild.member_count), inline=True)
 embed.set_footer(text="Updated now")
-embed.set_thumbnail(url=guild.icon.url)
 await channel.send(embed=embed)
 
-# File
 file = discord.File("/path/to/file.png", filename="image.png")
-await channel.send("Here is the file:", file=file)
+await channel.send("Here it is:", file=file)
 ```
 
 ---
 
 ## Common Patterns
 
-### Wait for a user response
+### Wait for user input
 
 ```python
 @bot.command()
-async def confirm(ctx: commands.Context):
+async def confirm(ctx):
     await ctx.send("Are you sure? (yes/no)")
-    def check(m):
-        return m.author == ctx.author and m.channel == ctx.channel
+    def check(m): return m.author == ctx.author and m.channel == ctx.channel
     try:
         msg = await bot.wait_for("message", timeout=30.0, check=check)
-        if msg.content.lower() == "yes":
-            await ctx.send("Confirmed.")
-        else:
-            await ctx.send("Cancelled.")
+        await ctx.send("Confirmed." if msg.content.lower() == "yes" else "Cancelled.")
     except asyncio.TimeoutError:
         await ctx.send("Timed out.")
 ```
 
-### Change bot presence
+### Change presence
 
 ```python
-@bot.event
-async def on_ready():
-    await bot.change_presence(
-        status=discord.Status.online,
-        activity=discord.Game(name="discord.py v2")
-    )
+await bot.change_presence(
+    status=discord.Status.online,
+    activity=discord.Game(name="discord.py v2")
+)
 ```
-
-Activity types: `discord.Game`, `discord.Streaming`, `discord.Activity`,
-`discord.CustomActivity`.
 
 ---
 
@@ -459,23 +337,23 @@ Activity types: `discord.Game`, `discord.Streaming`, `discord.Activity`,
 
 ```python
 @bot.event
-async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("You lack the required permissions.")
     elif isinstance(error, commands.MemberNotFound):
         await ctx.send("Member not found.")
     elif isinstance(error, commands.CommandNotFound):
-        pass  # Silently ignore unknown commands
+        pass
     else:
-        raise error  # Re-raise unexpected errors for logging
+        raise error
 ```
 
 ---
 
-## Version notes
+## Version Notes
 
-- `discord.py` v2.x requires Python 3.8+ and is async-only.
-- `discord.ext.commands.Bot` is a subclass of `discord.Client`.
+- v2.x requires Python 3.8+ and is fully async.
+- `commands.Bot` is a subclass of `discord.Client`.
 - `app_commands.CommandTree` is separate from the prefix command system.
-- Slash command syncing with `tree.sync()` is global (up to 1h propagation) or per-guild (instant).
-- `on_message` must call `await bot.process_commands(message)` when using `commands.Bot`.
+- `on_message` must call `await bot.process_commands(message)` with `commands.Bot`.
+- Use `tree.sync(guild=...)` for instant registration during development.
