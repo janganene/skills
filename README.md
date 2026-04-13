@@ -1,5 +1,5 @@
 # Discord Skills for Antigravity / Agent Skills
-A collection of 5 agent skills for Discord bot development and Git workflow.
+A collection of agent skills for Discord bot development, Git workflow, and web security.
 Compatible with **Google Antigravity**, **Claude Code**, **Cursor**, **Codex CLI**,
 **Gemini CLI**, and any agent that supports the open `SKILL.md` standard.
 
@@ -11,42 +11,56 @@ Compatible with **Google Antigravity**, **Claude Code**, **Cursor**, **Codex CLI
 |---|---|
 | `discord` | Build Discord bots and integrations — covers discord.js (Node.js), discord.py (Python), REST API, and webhooks |
 | `git-workflow` | Write standardized commit messages, name branches, and write pull requests (Conventional Commits) |
-| `discord-markdown-safety` | Defend against Discord markdown vulnerabilities in bot code |
+| `web-security` | Web application security audits — covers OWASP Top 10:2025, OWASP API Security, KISA/MOIS, and emerging threats (LLM injection, GraphQL, WebSocket) |
 
 ---
 
 ## Installation
 
+### Recommended — npx (all skills, one command)
+
+```bash
+# Global (all projects)
+npx skills add https://github.com/janganene/skills --skill web-security -g -y
+```
+
+```bash
+# Project-local only
+npx skills add https://github.com/janganene/skills --skill web-security -y
+```
+
+---
+
 ### Google Antigravity — Global (all projects)
 ```bash
-cp -R discord git-workflow discord-markdown-safety \
+cp -R discord git-workflow web-security \
       ~/.gemini/antigravity/skills/
 ```
 
 ### Google Antigravity — Workspace (current project only)
 ```bash
 mkdir -p .agents/skills
-cp -R discord git-workflow discord-markdown-safety \
+cp -R discord git-workflow web-security \
       .agents/skills/
 ```
 
 ### Claude Code — Global
 ```bash
-cp -R discord git-workflow discord-markdown-safety \
+cp -R discord git-workflow web-security \
       ~/.claude/skills/
 ```
 
 ### Claude Code — Project
 ```bash
 mkdir -p .claude/skills
-cp -R discord git-workflow discord-markdown-safety \
+cp -R discord git-workflow web-security \
       .claude/skills/
 ```
 
 ### Universal (most agents — `.agent/skills/`)
 ```bash
 mkdir -p .agent/skills
-cp -R discord git-workflow discord-markdown-safety \
+cp -R discord git-workflow web-security \
       .agent/skills/
 ```
 
@@ -63,7 +77,10 @@ Once installed, trigger skills naturally in your agent chat:
 - *"Write a commit message for this change"* → loads `git-workflow`
 - *"Name this branch correctly"* → loads `git-workflow`
 - *"Write a PR description for this change"* → loads `git-workflow`
-- *"Sanitize user input before sending to Discord"* → loads `discord-markdown-safety`
+- *"Run a security audit on this endpoint"* → loads `web-security`
+- *"Check this code for OWASP vulnerabilities"* → loads `web-security`
+- *"Is this API vulnerable to injection or SSRF?"* → loads `web-security`
+- *"Scan for KISA/MOIS compliance issues"* → loads `web-security`
 
 ---
 
